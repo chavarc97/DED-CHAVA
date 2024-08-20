@@ -11,9 +11,9 @@ int main()
 {
   CLEAR
   /* verify the size of the pointers */
-  /* ex1_pointers_size();
+   ex1_pointers_size();
   getchar();
-  printf("=+=+=+ # # # # =+=+=+ # # # # =+=+=+ \n\n"); */
+  printf("=+=+=+ # # # # =+=+=+ # # # # =+=+=+ \n\n"); 
 
   ex2_dereferencing_pointers();
   printf("=+=+=+ # # # # =+=+=+ # # # # =+=+=+ \n\n");
