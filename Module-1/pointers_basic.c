@@ -11,10 +11,10 @@ int main()
 {
   CLEAR
   /* verify the size of the pointers */
-  ex1_pointers_size();
+  /* ex1_pointers_size();
   getchar();
-  printf("=+=+=+ # # # # =+=+=+ # # # # =+=+=+ \n\n");
-  
+  printf("=+=+=+ # # # # =+=+=+ # # # # =+=+=+ \n\n"); */
+
   ex2_dereferencing_pointers();
   printf("=+=+=+ # # # # =+=+=+ # # # # =+=+=+ \n\n");
   return 0;
@@ -32,45 +32,45 @@ void ex1_pointers_size()
   printf(" = = = = = Ex 01 POINTERS BASICS = = = = = = \n");
   char c = 'A';
   char *ptr_c = &c;
-  
-    int  i = 1024;
+
+  int i = 1024;
   int *ptr_i = &i;
 
   /* Verify the size of the variables
      sizeof() returns the size in bytes of what you pass in as arg
      sizeof returns a long, so %ld is the right format option.
   */
-  printf( "size of c %ld \n"
-          "size of ptr_c %ld\n" 
-          "size of i %ld\n" 
-          "size of ptr_i %ld\n", 
+  printf("size of c %ld \n"
+         "size of ptr_c %ld\n"
+         "size of i %ld\n"
+         "size of ptr_i %ld\n",
          sizeof(c), sizeof(ptr_c), sizeof(i), sizeof(ptr_i));
   printf(" = = = = = = = = = = = = = = = = = = = \n");
 
   getchar();
 
-
   /* Pointers can point to any kind of variable, even STRUCTS : */
-  struct node {
+  struct node
+  {
     int a;
-    int b ;
+    int b;
     int c;
   } node;
 
-  /* 
+  /*
     This node contains 3 ints:
     We know then its size must be sizeof(int) x 3 = 12 bytes.
     A pointer to node, is of size 8, just as ALL the pointers on this system.
  */
   struct node mynode;
   struct node *ptr_node = &mynode;
-  
-  printf("node size : %ld \n", sizeof (mynode));
-  printf("ptr to node size : %ld \n", sizeof (ptr_node));
+
+  printf("node size : %ld \n", sizeof(mynode));
+  printf("ptr to node size : %ld \n", sizeof(ptr_node));
   printf(" = = = = = = = = = = = = = = = = = = = \n");
-  
+
   /* lastly lets see where everything is in memory */
-  printf("the address of variable i = %p \n", &i );
+  printf("the address of variable i = %p \n", &i);
   printf("the value stored in ptr_i = %p \n", ptr_i);
   printf("the value inside i = %d \n", i);
   printf("the value that ptr_i points to = %d \n", *ptr_i);
@@ -79,7 +79,7 @@ void ex1_pointers_size()
   /* we can do the same with chars */
   char letter;
   letter = 'A';
-  
+
   char *char_ptr;
   char_ptr = &letter;
 
@@ -87,7 +87,7 @@ void ex1_pointers_size()
   printf("letter = %c\n", letter);
 
   /*What you CAN'T do is assign a pointer to another of a different type */
-  //char_ptr = ptr_i;
+  // char_ptr = ptr_i;
 }
 
 void ex2_dereferencing_pointers()
@@ -105,16 +105,29 @@ void ex2_dereferencing_pointers()
     Add 5 and print
 
   USE a different pointer in each step.
-  After each step, print the address of each pointer, the address to 
+  After each step, print the address of each pointer, the address to
   where it points to and its value:
 
   OUTPUT sample
   ptr1 lives in _____________ points to ____________ that cointains _______
 
   Finally print the value of the variable like normal.
-  */  
+  */
+  int *ptr_n1, *ptr_n2, *ptr_n3;
+  int n;
 
+  ptr_n1 = &n;
+  ptr_n2 = &n;
+  ptr_n3 = &n;
 
+  printf("\n===================================================\n");
+  *ptr_n1 = 10;
+  printf("ptr1 lives in %p points to %p that contains %d\n", &ptr_n1, ptr_n1, n);
+  *ptr_n2 = *ptr_n2 * 2;
+  printf("ptr2 lives in %p points to %p that contains %d\n", &ptr_n2, ptr_n2, n);
+  *ptr_n3 = *ptr_n3 + 5;
+  printf("ptr3 lives in %p points to %p that contains %d\n", &ptr_n3, ptr_n3, n);
+  
+  printf("The value of n is %d\n", n);
 
- 
 }
