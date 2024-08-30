@@ -25,10 +25,10 @@ int main()
   //  ========================ex03======================
   printf("=====================================================\n");
   printf("Exercise 03\n");
-  char strArr[11] = "HoLa MunDo!";
+  char strArr[] = "HoLa MunDo!";
 
   printf("\n-- -- Before conversion -- --\n");
-  for (int i = 0; i < 11; i++)
+  for (int i = 0; i < strlen(strArr); i++)
   {
     printf("strArr[%d] = %c | %d\n", i, strArr[i], strArr[i]);
   }
@@ -36,7 +36,7 @@ int main()
   ex03(strArr);
   // Print the array result
   printf("\n-- -- After conversion -- --\n");
-  for (int i = 0; i < 11; i++)
+  for (int i = 0; i < strlen(strArr); i++)
   {
     printf("strArr[%d] = %c | %d\n", i, strArr[i], strArr[i]);
   }
