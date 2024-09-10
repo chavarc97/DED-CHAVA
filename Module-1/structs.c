@@ -63,7 +63,7 @@ int structs()
 
   /* Recuerda que para acceder a los miembros de una estructura,
   se utiliza el operador "." (punto) */
-  printf("node : %d, %f y %s \n", 
+  printf("node : %d, %f y %p \n", 
           n.n, n.f, n.s);
 
   /* La principal diferencia con un apuntador a una estructura es 
