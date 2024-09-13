@@ -13,7 +13,7 @@
 
 /* ======================================================================================== */
 // Define structs for the game and the magic attacks
-typedef void (*magic_func)(void *);
+typedef void (*magic_func)(void *, void *);
 typedef struct Player
 {
     char name[NAME_LENGTH];
@@ -32,13 +32,16 @@ void clear_screen();
 int is_critical_hit(Player *defender, int dice_roll_result, int attack_damage);
 void select_magic(Player *player);
 void select_magic_for_cpu(Player *cpu);
+int game_menu(Player *player);
+void select_action(Player *player, int choice);
+void magic_menu(Player *player);
 
 // function prototypes for the magic attacks
-void fireball(void *opponent);
-void shield_of_light(void *caster);
-void lightning_strike(void *opponent);
-void freeze(void *opponent);
-void healing(void *caster);
+void fireball(void *attacker, void *opponent);
+void shield_of_light(void *attacker, void *opponent);
+void lightning_strike(void *attacker, void *opponent);
+void freeze(void *attacker, void *opponent);
+void healing(void *attacker, void *opponent);
 // Array of magic functions
 magic_func all_magic_func[] = {fireball, shield_of_light, lightning_strike, freeze, healing};
 
@@ -62,14 +65,31 @@ int main()
     /* ===================================================================================== */
     // start game loop here...
     int game_status = 1;
-    // while (game_status)
-    //{
-    /*
-     * Magic functions must receive 1 or 2 void pointers.
-     * With these pointers, they can obtain any necessary data from the game.
-     * There must be at least 5 different magic functions.
-     */
-    //}
+    while (game_status)
+    {
+        // get the human player and the cpu player
+        Player *human = players;
+        Player *cpu = (players + 1);
+        // Choose if the player attacks, uses magic or defends
+        if (human->hp <= 0)
+        {
+            printf("CPU wins!\n");
+            game_status = 0;
+            break;
+        }
+        if (cpu->hp <= 0)
+        {
+            printf("Human wins!\n");
+            game_status = 0;
+            break;
+        }
+        int choice = game_menu(human);
+        select_action(human, choice);
+        getchar();
+
+        choice = rand() % 3 +1;
+        select_action(cpu, choice);
+    }
 
     return 0;
 }
@@ -78,13 +98,67 @@ void clear_screen()
 {
     printf("\033[H\033[J"); // Clear the screen
 }
+int game_menu(Player *player)
+{
+    int choice;
+    printf("Player: %s\n", player->name);
+    printf("Choose an action: \n");
+    printf("1. Attack\n");
+    printf("2. Use magic\n");
+    printf("3. Defend\n");
+    printf("4. Exit\n");
+    printf("Enter your choice: ");
+    scanf("%d", &choice);
+    return choice;
+}
+void select_action(Player *player, int choice)
+{
+    switch (choice)
+    {
+    case 1:
+        // Attack
+        attack(player, player + 1);
+        break;
+    case 2:
+        // Use magic
+        magic_menu(player);
+        break;
+    case 3:
+        // Defend
+        player->defense += 5;
+        break;
+    case 4:
+        // Exit
+        printf("Player quits...\n");
+        printf("Exiting game...\n");
+        exit(0);
+        break;
+    default:
+        printf("Invalid choice\n");
+        break;
+    }
+}
+
+void magic_menu(Player *player)
+{
+    int choice;
+    printf("Choose a magic attack: \n");
+    for (int i = 0; i < 3; i++)
+    {
+        printf("%d. %s\n", i + 1, *(player->magic_name + i));
+        printf("---------------------------------------------|\n");
+    }
+    printf("Enter your choice: ");
+    scanf("%d", &choice);
+    player->magic[choice - 1](player, player + 1);
+}
 
 int is_critical_hit(Player *defender, int dice_roll_result, int attack_damage)
 {
     if (dice_roll_result >= defender->defense)
     {
         // Calculate attack damage based on dice roll result
-        attack_damage = (dice_roll_result == 20) ? (dice_roll_result * 2) : dice_roll_result;
+        attack_damage = (dice_roll_result == 20) ? (dice_roll_result * 2) : 10;
         if (dice_roll_result == 20)
         {
             clear_screen();
@@ -193,7 +267,7 @@ void select_magic_for_cpu(Player *cpu)
 
         do
         {
-            is_duplicate = 0; // Reset duplicate flag
+            is_duplicate = 0;           // Reset duplicate flag
             random_choice = rand() % 5; // Randomly select an index between 0 and 4
 
             // Check for duplicates
@@ -202,7 +276,7 @@ void select_magic_for_cpu(Player *cpu)
                 if (selected_indices[j] == random_choice)
                 {
                     is_duplicate = 1; // Mark as duplicate
-                    break; // Try again
+                    break;            // Try again
                 }
             }
 
@@ -221,11 +295,21 @@ void select_magic(Player *player)
     int selected_indices[3] = {-1, -1, -1}; // Array to store the indices of selected magic abilities
     int magic_choice;
     printf("Select 3 magic abilities for %s:\n", player->name);
-    printf("1. Fireball \n\tDamage: 20\n");
-    printf("2. Shield of Light \n\tEffect: increase defend 5 points\n");
-    printf("3. Lightning Strike \n\tDamage: 30\n");
-    printf("4. Freeze \n\tEffect: Skip opponent's turn\n");
-    printf("5. Healing \n\tEffect: Restore 5hp points\n");
+    printf("1. Fireball \n");
+    printf("\tDamage: 20\n");
+    printf("---------------------------------------------|\n");
+    printf("2. Shield of Light \n");
+    printf("\tEffect: increase defense 5 points\n");
+    printf("---------------------------------------------|\n");
+    printf("3. Lightning Strike \n");
+    printf("\tDamage: 30\n");
+    printf("---------------------------------------------|\n");
+    printf("4. Freeze\n");
+    printf("\tEffect: Skip opponent's turn\n");
+    printf("---------------------------------------------|\n");
+    printf("5. Healing \n");
+    printf("\tEffect: Restore 5hp points\n");
+    printf("---------------------------------------------|\n");
     for (int i = 0; i < 3; i++)
     {
         int is_duplicate;
@@ -233,7 +317,7 @@ void select_magic(Player *player)
         do
         {
             is_duplicate = 0; // Reset duplicate flag
-            printf("Select magic ability %d: ", i + 1);
+            printf("SELECT MAGIC ABILITY %d: ", i + 1);
             scanf("%d", &choice);
             getchar(); // Consume newline character left by scanf
 
@@ -264,27 +348,43 @@ void select_magic(Player *player)
 }
 
 // Magic functions
-void fireball(void *opponent)
+void fireball(void *attacker, void *opponent)
 {
     // Implement fireball logic
+    Player *opponent_player = (Player *)opponent;
+    Player *attacker_player = (Player *)attacker;
+    int dice = dice_roll();
+    int damage = dice >= opponent_player->defense ? 20 : 40;
+    opponent_player->hp -= damage;
+    clear_screen();
+    printf("%s prepares a fireball....\n", attacker_player->name);
+    printf("\tMagic: %d. \t Defense: %d.\n", dice, opponent_player->defense);
+    if (dice >= opponent_player->defense)
+    {
+        printf("FIREBALL HITS!!!! %s takes %d damage.\n", opponent_player->name, damage);
+    }
+    else
+    {
+        printf("FIREBALL MISSES! 😢 %s takes no damage.\n", opponent_player->name);
+    }
 }
 
-void shield_of_light(void *caster)
+void shield_of_light(void *attacker, void *opponent)
 {
     // Implement shield of light logic
 }
 
-void lightning_strike(void *opponent)
+void lightning_strike(void *attacker, void *opponent)
 {
     // Implement lightning strike logic
 }
 
-void freeze(void *opponent)
+void freeze(void *attacker, void *opponent)
 {
     // Implement freeze logic
 }
 
-void healing(void *caster)
+void healing(void *attacker, void *opponent)
 {
     // Implement healing logic
 }
