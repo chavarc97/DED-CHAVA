@@ -27,14 +27,14 @@ typedef struct Player
 
 int dice_roll();
 void set_player(Player *players);
-int attack(Player *attacker, Player *defender);
+void attack(Player *attacker, Player *defender);
 void clear_screen();
-int is_critical_hit(Player *defender, int dice_roll_result, int attack_damage);
+int is_critical_hit(Player *defender, int dice_roll_result);
 void select_magic(Player *player);
 void select_magic_for_cpu(Player *cpu);
 int game_menu(Player *player);
-void select_action(Player *player, int choice);
-void magic_menu(Player *player);
+void select_action(Player *player, Player *defender, int choice);
+void magic_menu(Player *player, Player *defender);
 
 // function prototypes for the magic attacks
 void fireball(void *attacker, void *opponent);
@@ -65,12 +65,14 @@ int main()
     /* ===================================================================================== */
     // start game loop here...
     int game_status = 1;
+
     while (game_status)
     {
         // get the human player and the cpu player
         Player *human = players;
         Player *cpu = (players + 1);
-        // Choose if the player attacks, uses magic or defends
+
+        // Check if either player has lost before continuing
         if (human->hp <= 0)
         {
             printf("CPU wins!\n");
@@ -83,12 +85,39 @@ int main()
             game_status = 0;
             break;
         }
-        int choice = game_menu(human);
-        select_action(human, choice);
-        getchar();
 
-        choice = rand() % 3 +1;
-        select_action(cpu, choice);
+        // Human player's turn
+        printf("Human's turn\n");
+        int choice = game_menu(human);
+        select_action(human, cpu, choice);
+        getchar();
+        printf("%s's hp: %d\n", human->name, human->hp);
+        printf("%s's hp: %d\n", cpu->name, cpu->hp);
+        clear_screen();
+        getchar();
+        // Check if the CPU has lost after the human's turn
+        if (cpu->hp <= 0)
+        {
+            printf("Human wins!\n");
+            game_status = 0;
+            break;
+        }
+
+        // CPU's turn
+        printf("CPU's turn\n");
+        choice = rand() % 3 + 1;
+        select_action(cpu, human, choice);
+
+        // Check if the human has lost after the CPU's turn
+        if (human->hp <= 0)
+        {
+            printf("CPU wins!\n");
+            game_status = 0;
+            break;
+        }
+
+        // Clear the screen between turns
+        clear_screen();
     }
 
     return 0;
@@ -111,25 +140,33 @@ int game_menu(Player *player)
     scanf("%d", &choice);
     return choice;
 }
-void select_action(Player *player, int choice)
+void select_action(Player *player, Player *defender, int choice)
 {
+    if (strcmp(player->name, "CPU") == 0)
+    {
+        printf("CPU's turn\n");
+        choice = rand() % 3 + 1;
+    }
     switch (choice)
     {
     case 1:
         // Attack
-        attack(player, player + 1);
+        attack(player, defender);
         break;
     case 2:
         // Use magic
-        magic_menu(player);
+        magic_menu(player, defender); // Pass defender to the magic_menu
         break;
     case 3:
         // Defend
         player->defense += 5;
+        printf("%s defends hp increases to: %d\n", player->name, player->hp);
+        getchar();
         break;
     case 4:
         // Exit
         printf("Player quits...\n");
+
         printf("Exiting game...\n");
         exit(0);
         break;
@@ -139,59 +176,104 @@ void select_action(Player *player, int choice)
     }
 }
 
-void magic_menu(Player *player)
+void magic_menu(Player *player, Player *defender)
 {
     int choice;
-    printf("Choose a magic attack: \n");
-    for (int i = 0; i < 3; i++)
+    if (strcmp(player->name, "CPU") == 0)
     {
-        printf("%d. %s\n", i + 1, *(player->magic_name + i));
-        printf("---------------------------------------------|\n");
+        choice = rand() % 3 + 1;
+        player->magic[choice - 1](player, defender);
     }
-    printf("Enter your choice: ");
-    scanf("%d", &choice);
-    player->magic[choice - 1](player, player + 1);
-}
-
-int is_critical_hit(Player *defender, int dice_roll_result, int attack_damage)
-{
-    if (dice_roll_result >= defender->defense)
+    else
     {
-        // Calculate attack damage based on dice roll result
-        attack_damage = (dice_roll_result == 20) ? (dice_roll_result * 2) : 10;
-        if (dice_roll_result == 20)
+        printf("Choose a magic attack: \n");
+        for (int i = 0; i < 3; i++)
         {
-            clear_screen();
-            printf("Critical hit!\n");
+            printf("%d. %s\n", i + 1, *(player->magic_name + i));
+            printf("---------------------------------------------|\n");
+        }
+        printf("Enter your choice: ");
+        scanf("%d", &choice);
+
+        // Ensure choice is valid
+        if (choice >= 1 && choice <= 3)
+        {
+            // Call the selected magic function, passing attacker and defender
+            player->magic[choice - 1](player, defender);
+        }
+        else
+        {
+            printf("Invalid choice, returning to action menu.\n");
         }
     }
-    return attack_damage; // Return attack damage
 }
-int attack(Player *attacker, Player *defender)
-{
-    int ret;
-    int attack_damage = 0;
-    int dice_roll_result;
-    // get the current player
-    // this ptr is set to idx 0 of the players array
 
-    // if the player is the user, then ask the user to roll the dice
+int is_critical_hit(Player *defender, int dice_roll_result)
+{
+    int attack_damage = 0;
+    if (dice_roll_result == 20)
+    {
+        // Critical hit: if dice roll is 20, deal 40 damage
+        attack_damage = 20 * 2;
+        clear_screen();
+        printf("Critical hit!\n");
+    }
+    else if (dice_roll_result >= defender->defense)
+    {
+        // Normal hit: if dice roll is >= defender's defense, deal 10 damage
+        attack_damage = 10;
+    }
+    else
+    {
+        // Miss: no damage if the dice roll is less than defender's defense
+        printf("Attack missed!\n");
+    }
+
+    return attack_damage; // Return the calculated attack damage
+}
+void attack(Player *attacker, Player *defender)
+{
+    int dice_roll_result;
+    int attack_damage = 0;
+
+    // Check if the attacker is a human or CPU
     if (strcmp(attacker->name, "CPU") != 0)
     {
         printf("Press enter to roll the dice\n");
         getchar();
         dice_roll_result = dice_roll();
         printf("You rolled a %d\n", dice_roll_result);
-        is_critical_hit(defender, dice_roll_result, attack_damage);
-        return attack_damage; // Return attack damage
+
+        // Calculate the attack damage based on the dice roll and defender's defense
+        attack_damage = is_critical_hit(defender, dice_roll_result);
+        if (attack_damage > 0)
+        {
+            printf("You attacked %s for %d damage\n", defender->name, attack_damage);
+            defender->hp -= attack_damage;
+        }
+        else
+        {
+            printf("Your attack missed!\n");
+        }
+        getchar(); // Wait for user to press enter
     }
     else
     {
+        // CPU's turn
         dice_roll_result = dice_roll();
         printf("CPU rolled a %d\n", dice_roll_result);
-        attack_damage = dice_roll_result;
-        is_critical_hit(defender, dice_roll_result, attack_damage);
-        return attack_damage;
+
+        // Calculate the attack damage based on the dice roll and defender's defense
+        attack_damage = is_critical_hit(defender, dice_roll_result);
+        if (attack_damage > 0)
+        {
+            printf("CPU attacked %s for %d damage\n", defender->name, attack_damage);
+            defender->hp -= attack_damage;
+        }
+        else
+        {
+            printf("CPU's attack missed!\n");
+        }
     }
 }
 
@@ -204,20 +286,6 @@ int dice_roll()
     return (rand() % DICE_SIDES) + 1;
 }
 
-/**
- * The function `set_player` assigns values to a Player struct including name, hp, defense, and an
- * array of Magic structs.
- *
- * @param player A pointer to a structure representing a player in a game.
- * @param name The `name` parameter is a pointer to a character array that represents the name of the
- * player.
- * @param hp Hit points (health points) of the player.
- * @param defense Defense is a parameter that represents the defensive capabilities of a player in a
- * game. It is used to reduce the amount of damage taken by the player when attacked by enemies or
- * other entities in the game. A higher defense value typically means the player will take less damage
- * when hit.
- * @param magic Magic *magic is a pointer to an array of Magic structures.
- */
 void set_player(Player *players)
 {
     // Array of magic names
@@ -237,12 +305,6 @@ void set_player(Player *players)
     cpu->hp = 100;
     cpu->defense = 10;
     select_magic_for_cpu(cpu); // Randomly select magic attacks for the CPU
-    /* for (int i = 0; i < 3; i++)
-    {
-        int random_magic = rand() % 5;
-        *((cpu->magic) + i) = *(all_magic_func + random_magic);
-        strcpy(*(cpu->magic_name + i), *(all_magic_names + random_magic));
-    } */
     clear_screen();
     printf("Players have been initialized\n");
     printf("\n=====================================\n");
@@ -359,32 +421,90 @@ void fireball(void *attacker, void *opponent)
     clear_screen();
     printf("%s prepares a fireball....\n", attacker_player->name);
     printf("\tMagic: %d. \t Defense: %d.\n", dice, opponent_player->defense);
-    if (dice >= opponent_player->defense)
+    if (dice == 20)
     {
-        printf("FIREBALL HITS!!!! %s takes %d damage.\n", opponent_player->name, damage);
+        printf("Critical hit! %s takes 40 damage.\n", opponent_player->name);
+        opponent_player->hp -= 40;
+    }
+    else if (dice >= opponent_player->defense)
+    {
+        printf("FIREBALL HITS!!!! %s takes 20 damage.\n", opponent_player->name);
+        opponent_player->hp -= 20;
     }
     else
     {
-        printf("FIREBALL MISSES! 😢 %s takes no damage.\n", opponent_player->name);
+        printf("FIREBALL MISSES! %s takes no damage.\n", opponent_player->name);
     }
 }
 
 void shield_of_light(void *attacker, void *opponent)
 {
     // Implement shield of light logic
+    Player *caster = (Player *)attacker;
+    int defense_boost = 5; // Incremento temporal en defensa
+    caster->defense += defense_boost;
+    clear_screen();
+    printf("%s conjures a Shield of Light.\n", caster->name);
+    printf("\tDefense increased by %d.\n", defense_boost);
+    printf("%s's new defense: %d.\n", caster->name, caster->defense);
 }
 
 void lightning_strike(void *attacker, void *opponent)
 {
     // Implement lightning strike logic
+    Player *opponent_player = (Player *)opponent;
+    Player *attacker_player = (Player *)attacker;
+    int dice = dice_roll();
+    int damage = 0;
+    if (dice == 20)
+    {
+        damage = 60;
+    }
+    else if (dice >= opponent_player->defense)
+    {
+        damage = 30;
+    }
+    else
+    {
+        damage = 0;
+    }
+    clear_screen();
+    printf("%s calls down a Lightning Strike...\n", attacker_player->name);
+    printf("\tMagic: %d. \tDefense: %d.\n", dice, opponent_player->defense);
+
+    if (dice == 20)
+    {
+        printf("Critical hit! %s takes 50 damage.\n", opponent_player->name);
+        opponent_player->hp -= damage;
+    }
+    else if (dice >= opponent_player->defense && dice < 20)
+    {
+        printf("Lightning Strike hits! %s takes 25 damage.\n", opponent_player->name);
+        opponent_player->hp -= damage;
+    }
+    else
+    {
+        printf("Lightning Strike misses! %s takes no damage.\n", opponent_player->name);
+    }
 }
 
 void freeze(void *attacker, void *opponent)
 {
     // Implement freeze logic
+    Player *opponent_player = (Player *)opponent;
+    clear_screen();
+    printf("%s casts Freeze on %s!\n", ((Player *)attacker)->name, opponent_player->name);
+    printf("%s is frozen and will lose the next turn!\n", opponent_player->name);
 }
 
 void healing(void *attacker, void *opponent)
 {
     // Implement healing logic
+    Player *caster = (Player *)attacker;
+    int heal_amount = 10;
+    caster->hp += heal_amount;
+    if (caster->hp > 100) caster->hp = 100; // Limitar la vida a 100 como máximo
+    clear_screen();
+    printf("%s casts Healing and restores %d HP!\n", caster->name, heal_amount);
+    printf("%s's HP is now %d.\n", caster->name, caster->hp);
 }
