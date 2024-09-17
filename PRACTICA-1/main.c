@@ -19,6 +19,7 @@ typedef struct Player
     char name[NAME_LENGTH];
     int hp;
     int defense;
+    int is_freezed;        // 1 if player is freezed, 0 otherwise
     magic_func magic[3];     // Arreglo de punteros a función para magias
     char magic_name[3][100]; // Arreglo de nombres de magias
 } Player;
@@ -75,8 +76,8 @@ void game_loop(Player *human, Player *cpu)
         printf("=== Round %d ===\n", round);
         // show game state (HP of players)
         printf("=== Battle Progress ===\n");
-        printf("%s: HP = %d \n\tDEFENSE = %d\n", human->name, human->hp, human->defense);
-        printf("CPU: HP = %d \n\tDEFENSE = %d\n", cpu->hp, cpu->defense);
+        printf("%s: HP = %d \n\tDEFENSE = %d \tFROZEN = %s\n", human->name, human->hp, human->defense, human->is_freezed ? "YES" : "NO");
+        printf("CPU: HP = %d \n\tDEFENSE = %d \tFROZEN = %s\n", cpu->hp, cpu->defense, cpu->is_freezed ? "YES" : "NO");
         printf("===========================\n\n");
         // check if the human or cpu have won
         if (human->hp <= 0)
@@ -91,23 +92,39 @@ void game_loop(Player *human, Player *cpu)
             game_over = 1;
             break;
         }
-        // alternate turns between human and CPU
-        if (turn == 0)
+        Player *current_player = turn == 0 ? human : cpu;
+        Player *opponent_player = turn == 0 ? cpu : human; 
+        // Check if the current player is frozen
+        if (current_player->is_freezed)
         {
-            human->defense = 10; // Reset defense to 10 at the start of the turn
-            printf("It's your turn, %s\n", human->name);
-            player_turn(human, cpu);
-            round++;
-            turn = 1;
+            printf("%s is frozen and loses this turn!\n", current_player->name);
+            
+                current_player->is_freezed = 0; // Reset the frozen flag
+                current_player->defense = 10; // Reset the defense
+
+            // Skip the turn
+            turn = 1 - turn; // Switch turns
         }
         else
         {
-            cpu->defense = 10; // Reset defense to 10 at the start of the turn
-            printf("It's CPU's turn\n");
-            cpu_turn(cpu, human);
-            round++;
-            turn = 0;
+            // Perform the player's turn
+            if (turn == 0)
+            {
+                human->defense = 10; // Reset the defense
+                printf("It's %s's turn.\n", human->name);
+                player_turn(human, cpu);  // Function to handle the human player's turn
+            }
+            else
+            {
+                cpu->defense = 10; // Reset the defense
+                printf("It's CPU's turn.\n");
+                cpu_turn(cpu, human);  // Function to handle the CPU's turn
+            }
+
+            // Switch turns after a successful action
+            turn = 1 - turn; // Switch turns
         }
+
 
         printf("Press enter to continue...\n");
         getchar();
@@ -495,6 +512,9 @@ void freeze(void *attacker, void *opponent)
     clear_screen();
     printf("%s casts Freeze on %s!\n", ((Player *)attacker)->name, opponent_player->name);
     printf("%s is frozen and will lose the next turn!\n", opponent_player->name);
+    // Set the is_freezed flag to 1 to skip the opponent's turn
+    opponent_player->is_freezed = 1;
+
 }
 
 void healing(void *attacker, void *opponent)
