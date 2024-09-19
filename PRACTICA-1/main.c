@@ -13,19 +13,18 @@
 
 /* ======================================================================================== */
 // Define structs for the game and the magic attacks
-typedef void (*magic_func)(void *, void *);
+typedef void (*magic_func)(void *, void *); // Function pointer for magic attacks
 typedef struct Player
 {
     char name[NAME_LENGTH];
     int hp;
     int defense;
-    int is_freezed;        // 1 if player is freezed, 0 otherwise
-    magic_func magic[3];     // Arreglo de punteros a función para magias
-    char magic_name[3][100]; // Arreglo de nombres de magias
+    int is_freezed;          // 1 if player is freezed, 0 otherwise
+    magic_func magic[3];     // Array of pointers to magic functions
+    char magic_name[3][100]; // Array of magic names
 } Player;
 /* ======================================================================================== */
 // Function prototypes
-
 int dice_roll();
 void set_player(Player *players);
 void attack(Player *attacker, Player *defender);
@@ -43,9 +42,6 @@ void shield_of_light(void *attacker, void *opponent);
 void lightning_strike(void *attacker, void *opponent);
 void freeze(void *attacker, void *opponent);
 void healing(void *attacker, void *opponent);
-// Array of magic functions
-magic_func all_magic_func[] = {fireball, shield_of_light, lightning_strike, freeze, healing};
-
 /* ======================================================================================== */
 
 int main()
@@ -65,6 +61,17 @@ int main()
 
 //================================================================================================
 // Functions
+/**
+ * The function `game_loop` controls the flow of a game between a human player and a CPU player,
+ * handling turns, game state updates, and determining the winner.
+ * 
+ * @param human The `human` parameter in the `game_loop` function is a pointer to a `Player` struct
+ * representing the human player in the game. This struct likely contains information about the human
+ * player such as their name, health points (hp), defense points, whether they are frozen, etc. The `
+ * @param cpu The `cpu` parameter in the `game_loop` function represents a pointer to the CPU player in
+ * the game. This player is controlled by the computer and its attributes, such as HP (health points),
+ * defense, and frozen status, are updated and displayed during the game loop. The CPU player takes
+ */
 void game_loop(Player *human, Player *cpu)
 {
     int turn = 0;      // 0 for human, 1 for CPU
@@ -93,14 +100,14 @@ void game_loop(Player *human, Player *cpu)
             break;
         }
         Player *current_player = turn == 0 ? human : cpu;
-        Player *opponent_player = turn == 0 ? cpu : human; 
+        Player *opponent_player = turn == 0 ? cpu : human;
         // Check if the current player is frozen
         if (current_player->is_freezed)
         {
             printf("%s is frozen and loses this turn!\n", current_player->name);
-            
-                current_player->is_freezed = 0; // Reset the frozen flag
-                current_player->defense = 10; // Reset the defense
+
+            current_player->is_freezed = 0; // Reset the frozen flag
+            current_player->defense = 10;   // Reset the defense
 
             // Skip the turn
             turn = 1 - turn; // Switch turns
@@ -112,25 +119,36 @@ void game_loop(Player *human, Player *cpu)
             {
                 human->defense = 10; // Reset the defense
                 printf("It's %s's turn.\n", human->name);
-                player_turn(human, cpu);  // Function to handle the human player's turn
+                player_turn(human, cpu); // Function to handle the human player's turn
             }
             else
             {
                 cpu->defense = 10; // Reset the defense
                 printf("It's CPU's turn.\n");
-                cpu_turn(cpu, human);  // Function to handle the CPU's turn
+                cpu_turn(cpu, human); // Function to handle the CPU's turn
             }
 
             // Switch turns after a successful action
             turn = 1 - turn; // Switch turns
         }
 
-
         printf("Press enter to continue...\n");
         getchar();
     }
 }
 
+/**
+ * The function `player_turn` allows a player to select an action such as attack, defend, or use magic
+ * during their turn in a game.
+ * 
+ * @param player The `player` parameter in the `player_turn` function is a pointer to a `Player` struct
+ * representing the current player who is taking their turn in the game. This struct likely contains
+ * information about the player such as their name, health, attack power, defense, and magic attacks.
+ * @param opponent The `opponent` parameter in the `player_turn` function represents the player that
+ * the current player is facing in the game. This opponent player will be the target of actions such as
+ * attacks, defenses, and magic spells during the player's turn. The function allows the current player
+ * to choose an action
+ */
 void player_turn(Player *player, Player *opponent)
 {
     int choice;
@@ -143,68 +161,75 @@ void player_turn(Player *player, Player *opponent)
     getchar();
     switch (choice)
     {
-        case 1:
-            attack(player, opponent);
-            break;
-        case 2:
-            // Defend: increase defense by 5
-            player->defense += 5;
-            printf("%s is defending\n", player->name);
-            break;
-        case 3:
-        {
-
-            // Use magic: select a magic attack
-            clear_screen();
-            printf("Select a magic attack:\n");
-            for (int i = 0; i < 3; i++)
-            {
-                printf("\t%d. %s\n", i + 1, *(player->magic_name + i));
-            }
-            int m_choice;
-            printf("Opción: ");
-            scanf("%d", &m_choice);
-            getchar();
-            if (m_choice >= 1 && m_choice <= 3)
-            {
-                magic_func magic = *(player->magic + m_choice - 1);
-                magic(player, opponent);
-            }
-            else
-            {
-                printf("Invalid choice\n");
-            }
-        }
+    case 1:
+        attack(player, opponent);
         break;
-        default:
+    case 2:
+        // Defend: increase defense by 5
+        player->defense += 5;
+        printf("%s is defending\n", player->name);
+        break;
+    case 3:
+    {
+
+        // Use magic: select a magic attack
+        clear_screen();
+        printf("Select a magic attack:\n");
+        for (int i = 0; i < 3; i++)
+        {
+            printf("\t%d. %s\n", i + 1, *(player->magic_name + i));
+        }
+        int m_choice;
+        printf("Opción: ");
+        scanf("%d", &m_choice);
+        getchar();
+        if (m_choice >= 1 && m_choice <= 3)
+        {
+            magic_func magic = *(player->magic + m_choice - 1);
+            magic(player, opponent);
+        }
+        else
+        {
             printf("Invalid choice\n");
-            break;
+        }
+    }
+    break;
+    default:
+        printf("Invalid choice\n");
+        break;
     }
 }
+
+/**
+ * The function `cpu_turn` randomly selects an action for the CPU player to perform in a game, such as
+ * attacking, defending, or using magic.
+ * 
+ * Same logic as the player turn.
+ */
 void cpu_turn(Player *cpu, Player *human)
 {
     int action = rand() % 3 + 1; // Randomly select an action for the CPU
     switch (action)
     {
-        case 1:
-            attack(cpu, human);
-            break;
-        case 2:
-            // Defend: increase defense by 5
-            cpu->defense += 5;
-            printf("CPU is defending\n");
-            break;
-        case 3:
-        {
-            // Use magic: randomly select a magic attack
-            int m_choice = rand() % 3;
-            magic_func magic = *(cpu->magic + m_choice);
-            magic(cpu, human);
-        }
-            break;
-        default:
-            printf("Invalid choice\n");
-            break;
+    case 1:
+        attack(cpu, human);
+        break;
+    case 2:
+        // Defend: increase defense by 5
+        cpu->defense += 5;
+        printf("CPU is defending\n");
+        break;
+    case 3:
+    {
+        // Use magic: randomly select a magic attack
+        int m_choice = rand() % 3;
+        magic_func magic = *(cpu->magic + m_choice);
+        magic(cpu, human);
+    }
+    break;
+    default:
+        printf("Invalid choice\n");
+        break;
     }
 }
 
@@ -213,6 +238,22 @@ void clear_screen()
     printf("\033[H\033[J"); // Clear the screen
 }
 
+/**
+ * The function determines the attack damage based on a dice roll result and the defender's defense,
+ * handling critical hits, normal hits, and misses in a turn-based combat scenario between players.
+ * 
+ * @param defender The `defender` parameter in the code represents a pointer to a `Player` struct,
+ * which likely contains information about the player being attacked, such as their name, defense
+ * value, and current health points (`hp`). The `defender` struct is used to determine the outcome of
+ * the attack based
+ * @param dice_roll_result The `dice_roll_result` parameter in the `is_critical_hit` function
+ * represents the result of rolling a dice to determine the outcome of an attack. It is an integer
+ * value that can range from 1 to 20, where 20 is considered a critical hit. The function calculates
+ * the attack damage
+ * 
+ * @return The function `int is_critical_hit(Player *defender, int dice_roll_result)` returns the
+ * calculated attack damage based on the dice roll result and the defender's defense.
+ */
 int is_critical_hit(Player *defender, int dice_roll_result)
 {
     int attack_damage = 0;
@@ -291,6 +332,14 @@ int dice_roll()
     return (rand() % DICE_SIDES) + 1;
 }
 
+/**
+ * The function `set_player` initializes human and CPU players with names, HP, defense, and magic
+ * attacks.
+ * 
+ * @param players The `players` parameter is a pointer to an array of `Player` structures. The function
+ * `set_player` initializes two players, one human player and one CPU player, using the information
+ * provided in the `players` array.
+ */
 void set_player(Player *players)
 {
     // Array of magic names
@@ -322,8 +371,18 @@ void set_player(Player *players)
            *(cpu->magic_name), *(cpu->magic_name + 1), *(cpu->magic_name + 2));
 }
 
+/**
+ * The function `select_magic_for_cpu` randomly selects three unique magic functions and their names
+ * for a CPU player from a predefined list.
+ * 
+ * @param cpu The `select_magic_for_cpu` function is designed to randomly select 3 unique magic spells
+ * for the CPU player from a list of available magic spells. The selected magic spells and their names
+ * are stored in the `cpu` player object.
+ */
 void select_magic_for_cpu(Player *cpu)
 {
+
+    magic_func all_magic_func[] = {fireball, shield_of_light, lightning_strike, freeze, healing};
     char *all_magic_names[] = {"Fireball", "Shield of Light", "Lightning Strike", "Freeze", "Healing"};
     int selected_indices[3] = {-1, -1, -1}; // Array to track selected indices for CPU
 
@@ -356,8 +415,17 @@ void select_magic_for_cpu(Player *cpu)
     }
 }
 
+/**
+ * The function `select_magic` allows a player to choose three unique magic abilities from a list and
+ * stores them in the player's data structure.
+ * 
+ * @param player The `player` parameter in the `select_magic` function is a pointer to a `Player`
+ * struct. This struct likely contains information about a player in a game, such as their name, health
+ * points, magic abilities, etc.
+ */
 void select_magic(Player *player)
 {
+    magic_func all_magic_func[] = {fireball, shield_of_light, lightning_strike, freeze, healing};
     char *all_magic_names[] = {"Fireball", "Shield of Light", "Lightning Strike", "Freeze", "Healing"};
     int selected_indices[3] = {-1, -1, -1}; // Array to store the indices of selected magic abilities
     int magic_choice;
@@ -514,7 +582,6 @@ void freeze(void *attacker, void *opponent)
     printf("%s is frozen and will lose the next turn!\n", opponent_player->name);
     // Set the is_freezed flag to 1 to skip the opponent's turn
     opponent_player->is_freezed = 1;
-
 }
 
 void healing(void *attacker, void *opponent)
