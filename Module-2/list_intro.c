@@ -33,6 +33,23 @@ void static_node_example()
   printf("\n");
 }
 
+void print_list(node *h)
+{
+  node *tmp = h;
+  printf("List = ");
+  while (tmp != NULL)
+  {
+    
+    printf("%d -> ", tmp->num);
+    if (tmp->next == NULL)
+    {
+      printf("NULL");
+    }
+    tmp = tmp->next;
+  }
+  printf("\n");
+}
+
 void dynamic_node_example()
 {
   node * n1 = create_node(1);
@@ -43,13 +60,15 @@ void dynamic_node_example()
   n2->next = n3;
   //El nodo 3, next ya apunta a null, porque create_node hace eso
   
-  printf("List = %d -> %d -> %d\n", n1->num, n2->num, n3->num);
+  //printf("List = %d -> %d -> %d\n", n1->num, n2->num, n3->num);
 
   /* EJERCICIO 1, imprimir toda la lista de forma mas inteligente,
   (que sirva para N numero de nodos) */
-
+  printf("----------------------\n");
+  printf("EJERCICIO 1\n");
+  print_list(n1);
   //Tips: Declara un apuntador o inicio de la lista
-  node * tmp = n1;
+  //node * tmp = n1;
 
   //Ahora que tmp = n1, puedes imprimir de tmp, hasta el final (n3)
 
@@ -63,7 +82,10 @@ void dynamic_node_example()
   /* EJERCICIO 2, agregar un nodo, al final de la lista, volver
   a imprimir para comprobar */
   node * n_ptr = create_node(10);
-
+  n_ptr->next = create_node(5);
+  printf("----------------------\n");
+  printf("EJERCICIO 2\n");
+  print_list(n_ptr);
   
 }
 
