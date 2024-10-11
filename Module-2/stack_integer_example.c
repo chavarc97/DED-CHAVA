@@ -19,11 +19,12 @@ int count = 0;
 // Operacion Push() para meter elementos al stack 
 void push(int data) 
 {
+  // Initialize a new node and the old top node
   stack_node *old_top = stack_top;
-  stack_node *n = (stack_node *)malloc(sizeof(stack_node));
-  n->info = data;
-  n->prev = old_top;
-  stack_top = n;
+  stack_node *n = (stack_node *)malloc(sizeof(stack_node)); // Allocate memory for the new node
+  n->info = data; // Assign the data to the new node
+  n->prev = old_top; // Assign the old top address to the new top_node->prev pointer
+  stack_top = n; // Assign the pushed node as the new stack_top
   count++;
 }
 
@@ -40,11 +41,11 @@ int pop()
   stack_node *new_top = NULL;
 
   // Remove the top element
-  int data = old_top->info;
-  new_top = old_top->prev;
-  free(old_top);
-  stack_top = new_top;
-  return data;
+  int data = old_top->info; // Store the top element so we can return it
+  new_top = old_top->prev; // Assign the new top element to the element below the old top
+  free(old_top); // Free the memory of the old top element
+  stack_top = new_top; // Update the top_stack pointer to the new top element
+  return data; // Return the deleted element
 }
 
 // Muestra los elementos actuales del stack
